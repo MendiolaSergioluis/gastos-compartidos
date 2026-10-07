@@ -1,0 +1,28 @@
+// GENERADO por scripts/slice-icons.mjs — no editar a mano.
+/** Slugs con PNG disponible en public/icons/. */
+export const GENERATED_ICON_SLUGS: readonly string[] = [
+  'house',
+  'building',
+  'key',
+  'sofa',
+  'bulb',
+  'water',
+  'flame',
+  'wifi',
+  'cart',
+  'coffee',
+  'pot',
+  'cleaning',
+  'bus',
+  'car',
+  'fuel',
+  'tv',
+  'music',
+  'games',
+  'card',
+  'bank',
+  'piggy',
+  'gift',
+  'pet',
+  'travel',
+]

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0b0d17" />
+    <meta
+      name="description"
+      content="Reparto equitativo de gastos compartidos: cada persona aporta el mismo porcentaje de su sueldo a un fondo común. Para parejas, familias y compañeros de piso."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Gastos Compartidos · reparto equitativo" />
+    <meta
+      property="og:description"
+      content="Cada persona aporta el mismo porcentaje de su sueldo a un fondo común. Para parejas, familias y compañeros de piso."
+    />
+    <meta property="og:image" content="/icon-512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>Gastos Compartidos · reparto equitativo</title>
+    <script>
+      // aplica el tema antes del primer render para evitar el destello
+      try {
+        var stored = localStorage.getItem('gastos-pareja.theme')
+        if (stored !== 'dark' && stored !== 'light') {
+          stored = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+        }
+        document.documentElement.dataset.theme = stored
+      } catch (error) {
+        document.documentElement.dataset.theme = 'dark'
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

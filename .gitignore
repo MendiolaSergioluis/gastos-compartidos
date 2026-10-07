@@ -1,0 +1,36 @@
+# dependencias y artefactos de build
+node_modules
+dist
+dist-ssr
+*.local
+
+# registros
+logs
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# capturas de verificación y perfiles de navegador
+shots/
+.chrome-*
+.fal-jobs.json
+audit-reports/
+
+# cachés locales
+.npm-cache/
+.pnpm-store/
+
+# hojas de iconos: se versionan las originales, no la hoja de contacto derivada
+assets/generated/contact-sheet.png
+
+# editores y sistema
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
