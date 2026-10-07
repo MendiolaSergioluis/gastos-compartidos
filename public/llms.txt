@@ -1,0 +1,17 @@
+# Gastos Compartidos
+
+> Aplicación web instalable (PWA) para repartir los gastos comunes en proporción
+> al sueldo de cada persona, en lugar de dividir todo a partes iguales. Funciona
+> sin conexión y guarda todos los datos en el dispositivo del usuario.
+
+La fórmula es `% = gastos compartidos ÷ ingreso combinado`, y cada persona aporta
+`aporte = sueldo × %`. Cada uno transfiere su porción a un fondo común desde el
+que se pagan las facturas, así que nadie le debe nada a nadie.
+
+## Documentación
+
+- [Guía de uso](https://github.com/MendiolaSergioluis/gastos-compartidos#readme): cómo instalarla, primeros pasos, rutina mensual y respaldo de datos.
+- [Guía de estilo](https://github.com/MendiolaSergioluis/gastos-compartidos/blob/main/docs/style-guide.md): tokens, BEM, accesibilidad y verificación.
+- [Análisis UX y A/B testing](https://github.com/MendiolaSergioluis/gastos-compartidos/blob/main/docs/ux-ab-testing.md): decisiones de interfaz y experimentos propuestos.
+- [Rendimiento medido](https://github.com/MendiolaSergioluis/gastos-compartidos/blob/main/docs/perf.md): LCP, CLS y por qué se descartó el troceado por ruta.
+- [Bitácora de la interfaz](https://github.com/MendiolaSergioluis/gastos-compartidos/blob/main/docs/ui-critique.md): fallos encontrados y su causa.

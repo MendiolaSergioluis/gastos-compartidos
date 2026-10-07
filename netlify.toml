@@ -1,0 +1,61 @@
+# Configuración de despliegue en Netlify.
+# No hace falta nada más: la app es estática, sin funciones, sin variables de
+# entorno y sin claves.
+
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  # Vite 8 exige ^20.19 || >=22.12. Sin esto, Netlify usa su versión por defecto
+  # y el build puede fallar por Node demasiado antiguo.
+  NODE_VERSION = "22.12.0"
+
+# La app navega por hash (#mes, #gastos…), así que no necesita reescrituras para
+# funcionar. Esta regla solo evita un 404 si alguien abre una ruta suelta: Netlify
+# sirve primero los archivos que existen, así que no afecta a los assets.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# --- Caché -------------------------------------------------------------
+# El service worker y su runtime NO llevan hash en el nombre: si el navegador
+# los cachea, la app se queda clavada en una versión antigua y el aviso de
+# «hay una versión nueva» nunca llega.
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/workbox-*.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# Los assets sí llevan hash en el nombre: son inmutables y se pueden cachear para
+# siempre. Es lo que hace que la segunda visita cargue en menos de 200 ms.
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# --- Cabeceras de seguridad --------------------------------------------
+# Ninguna rompe nada de lo que hace la app.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "no-referrer"
+    X-Frame-Options = "DENY"
+    Permissions-Policy = "geolocation=(), camera=(), microphone=(), payment=()"

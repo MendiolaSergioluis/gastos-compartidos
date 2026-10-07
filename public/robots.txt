@@ -1,0 +1,8 @@
+# Gastos Compartidos · aplicación web estática.
+# Solo hay una página: los datos del usuario viven en su propio dispositivo y no
+# se sirven desde aquí, así que no hay contenido privado que proteger.
+#
+# Si prefieres que no aparezca en buscadores, cambia la línea de abajo por:
+#   Disallow: /
+User-agent: *
+Allow: /
