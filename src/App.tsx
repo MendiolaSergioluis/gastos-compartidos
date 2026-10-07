@@ -19,7 +19,7 @@ import { Button, IconButton } from './components/ui'
 import { useStore } from './state/useStore'
 import { useSelectedMonth, useStandalone, useTheme } from './state/ui'
 import { useToast } from './state/useToast'
-import { onUpdateReady } from './sw'
+import { onOfflineReady, onUpdateReady } from './sw'
 
 const TABS = [
   { id: 'resumen', label: 'Resumen' },
@@ -66,6 +66,17 @@ export default function App() {
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
+
+  // la primera vez que el precaché termina, la app ya funciona sin conexión
+  useEffect(() => {
+    return onOfflineReady(() => {
+      toast.push({
+        message: 'Lista para usarse sin conexión',
+        tone: 'good',
+        duration: 5000,
+      })
+    })
+  }, [toast])
 
   useEffect(() => {
     return onUpdateReady((update) => {

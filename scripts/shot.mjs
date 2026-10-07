@@ -30,6 +30,9 @@ const evalExpression = evalIndex >= 0 ? flags[evalIndex].slice('--eval='.length)
 /** --scrollTo=<selector> deja el elemento arriba antes de capturar */
 const scrollIndex = flags.findIndex((flag) => flag.startsWith('--scrollTo='))
 const scrollTo = scrollIndex >= 0 ? flags[scrollIndex].slice('--scrollTo='.length) : null
+/** --scale=<n> factor de píxeles (1 para capturas que se publican tal cual) */
+const scaleIndex = flags.findIndex((flag) => flag.startsWith('--scale='))
+const scale = scaleIndex >= 0 ? Number(flags[scaleIndex].slice('--scale='.length)) : 2
 /** --do=<expresión> interactúa con la página antes de capturar */
 const doIndex = flags.findIndex((flag) => flag.startsWith('--do='))
 const doExpression = doIndex >= 0 ? flags[doIndex].slice('--do='.length) : null
@@ -117,7 +120,7 @@ try {
   await client.send('Emulation.setDeviceMetricsOverride', {
     width,
     height,
-    deviceScaleFactor: 2,
+    deviceScaleFactor: scale,
     mobile: width < 700,
   })
   if (theme) {
