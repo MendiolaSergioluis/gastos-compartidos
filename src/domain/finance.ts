@@ -80,8 +80,14 @@ export interface GoalProgress {
   goal: Goal
   /** lo que corresponde apartar: sueldo × % de la meta */
   target: number
-  /** lo registrado; mientras no se registre, se muestra la meta */
+  /**
+   * Valor para los cálculos de previsión: lo registrado, y mientras no haya
+   * nada registrado la meta, porque «libre tras aporte y metas» supone que sí
+   * se aparta. No sirve para editar: para eso está `deposited`.
+   */
   actual: number
+  /** lo apartado de verdad este mes; 0 mientras no se registre nada */
+  deposited: number
   recorded: boolean
 }
 
@@ -129,6 +135,8 @@ export interface GoalTotal {
   goal: Goal
   target: number
   actual: number
+  /** lo apartado de verdad entre todas las personas; 0 si no hay registro */
+  deposited: number
   recorded: boolean
 }
 
@@ -150,6 +158,8 @@ export interface MonthResult {
     byGoal: GoalTotal[]
     totalGoal: number
     totalActual: number
+    /** suma real de lo apartado; 0 mientras no se registre nada */
+    totalDeposited: number
   }
   /** estado del fondo común del mes */
   pot: {
@@ -405,6 +415,7 @@ export function computeMonth(
         goal,
         target,
         actual: stored === undefined ? target : round(stored, decimals),
+        deposited: stored === undefined ? 0 : round(stored, decimals),
         recorded: stored !== undefined,
       }
     })
@@ -494,6 +505,9 @@ export function computeMonth(
         const actuals = breakdowns.map(
           (entry) => entry.goals.find((item) => item.goal.id === goal.id)?.actual ?? 0,
         )
+        const deposits = breakdowns.map(
+          (entry) => entry.goals.find((item) => item.goal.id === goal.id)?.deposited ?? 0,
+        )
         const recorded = breakdowns.some(
           (entry) => entry.goals.find((item) => item.goal.id === goal.id)?.recorded,
         )
@@ -501,11 +515,13 @@ export function computeMonth(
           goal,
           target: round(sum(targets), decimals),
           actual: round(sum(actuals), decimals),
+          deposited: round(sum(deposits), decimals),
           recorded,
         }
       }),
       totalGoal: 0,
       totalActual: 0,
+      totalDeposited: 0,
     },
     pot: {
       target: round(totalShared, decimals),
@@ -523,6 +539,10 @@ export function computeMonth(
 
   base.savings.totalGoal = round(sum(base.savings.byGoal.map((entry) => entry.target)), decimals)
   base.savings.totalActual = round(sum(base.savings.byGoal.map((entry) => entry.actual)), decimals)
+  base.savings.totalDeposited = round(
+    sum(base.savings.byGoal.map((entry) => entry.deposited)),
+    decimals,
+  )
 
   base.warnings = buildWarnings({
     state,

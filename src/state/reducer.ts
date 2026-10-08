@@ -207,11 +207,14 @@ export function reducer(state: AppState, action: Action): AppState {
       return patchMonth(state, action.monthId, (month) => {
         const savings = month.savings ?? {}
         const current = savings[action.personId] ?? {}
+        // un 0 es «sin registrar», no un registro de cero: se borra la clave
+        const { [action.goalId]: _removed, ...rest } = current
         return {
           ...month,
           savings: {
             ...savings,
-            [action.personId]: { ...current, [action.goalId]: action.value },
+            [action.personId]:
+              action.value === 0 ? rest : { ...current, [action.goalId]: action.value },
           },
         }
       })

@@ -80,6 +80,10 @@ otra vez.
   mientras escribes. En **Metas del mes** cada meta lleva además un botón **✓** a su derecha para
   aplicar el cambio sin salir del campo: se enciende en cuanto escribes algo distinto. Si cambias de
   sección con algo a medio escribir, **se guarda igual**.
+- Las metas del mes **arrancan vacías** hasta que registras lo apartado: el campo muestra un `0.00`
+  gris de referencia y debajo, en pequeño, la meta que corresponde. Escribe lo que apartaste
+  —aunque sea justo el importe de la meta— y pulsa **✓**; eso es lo que alimenta el acumulado del
+  seguimiento. Si dejas el campo en `0`, el mes cuenta como **sin registrar**.
 - Todo lo que borras se puede **deshacer** desde el aviso de abajo.
 - Cada sección tiene su propia dirección (`#resumen`, `#mes`, `#gastos`, `#metas`, `#historial`,
   `#ajustes`), y los botones atrás/adelante del navegador funcionan.

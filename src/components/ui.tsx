@@ -181,6 +181,9 @@ export function NumberInput({
   onBlur,
   withApply = false,
   applyLabel = 'Aplicar el cambio',
+  blankWhenZero = false,
+  selectOnFocus = false,
+  placeholder,
   ...rest
 }: {
   value: number
@@ -193,9 +196,21 @@ export function NumberInput({
   /** muestra un botón para aplicar lo escrito sin salir del campo */
   withApply?: boolean
   applyLabel?: string
+  /**
+   * Con valor 0 el campo se ve vacío, con un 0 de referencia en gris, en vez de
+   * "0.00". En un campo que arranca en cero, escribir sobre un "0.00" pegado al
+   * cursor produce cosas como "0.00200"; vacío se escribe de corrido.
+   */
+  blankWhenZero?: boolean
+  /**
+   * Al entrar en el campo se selecciona lo que hay, para reemplazarlo escribiendo
+   * en vez de meter dígitos en medio del número anterior.
+   */
+  selectOnFocus?: boolean
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur' | 'prefix'>) {
   const [draft, setDraft] = useState<string | null>(null)
   const dirty = draft !== null && parseNumber(draft, decimals) !== value
+  const blank = blankWhenZero && value === 0
 
   /**
    * Lo escrito no puede perderse al salir del campo por otra vía.
@@ -259,8 +274,12 @@ export function NumberInput({
         className="input numberfield__input"
         type="text"
         inputMode="decimal"
-        value={draft ?? plainNumber(value, decimals)}
-        onFocus={() => edit(plainNumber(value, decimals))}
+        value={draft ?? (blank ? '' : plainNumber(value, decimals))}
+        placeholder={placeholder ?? (blankWhenZero ? plainNumber(0, decimals) : undefined)}
+        onFocus={(event) => {
+          edit(blank ? '' : plainNumber(value, decimals))
+          if (selectOnFocus && !blank) event.currentTarget.select()
+        }}
         onChange={(event) => edit(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
@@ -303,6 +322,8 @@ export function MoneyInput({
   suffix,
   withApply,
   applyLabel,
+  blankWhenZero,
+  selectOnFocus,
   ...rest
 }: {
   value: number
@@ -312,6 +333,8 @@ export function MoneyInput({
   suffix?: string
   withApply?: boolean
   applyLabel?: string
+  blankWhenZero?: boolean
+  selectOnFocus?: boolean
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'prefix'>) {
   return (
     <NumberInput
@@ -322,6 +345,8 @@ export function MoneyInput({
       suffix={suffix}
       withApply={withApply}
       applyLabel={applyLabel}
+      blankWhenZero={blankWhenZero}
+      selectOnFocus={selectOnFocus}
       {...rest}
     />
   )

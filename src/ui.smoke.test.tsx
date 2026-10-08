@@ -3,7 +3,8 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
-import { createDemoState } from './domain/defaults'
+import { GOAL_PERSONAL_ID, createDemoState } from './domain/defaults'
+import { currentMonthId } from './domain/finance'
 import { STORAGE_KEY, loadState } from './domain/storage'
 import { StoreProvider } from './state/StoreContext'
 import { ToastProvider } from './state/ToastProvider'
@@ -351,6 +352,14 @@ describe('app de gastos compartidos', () => {
     )
   }
 
+  /** Lo apartado en el mes abierto, para una meta y una persona concretas. */
+  function savedThisMonth(goalId: string, personId: string): number | undefined {
+    const saved = loadState()
+    // el mes abierto solo se guarda aparte cuando se cambia de mes; si no, es el actual
+    const monthId = localStorage.getItem('gastos-pareja.month') ?? currentMonthId()
+    return saved?.months[monthId]?.savings?.[personId]?.[goalId]
+  }
+
   it('actualiza una meta con el botón de aplicar sin salir del campo', async () => {
     await clickTab(container, 'Mes')
 
@@ -377,6 +386,51 @@ describe('app de gastos compartidos', () => {
       container.querySelector<HTMLInputElement>('.goalcard .numberfield input')?.value,
     ).toContain('999')
     expect(apply()?.disabled).toBe(true)
+  })
+
+  it('deja registrar en una meta el mismo importe que la meta sugerida', async () => {
+    await clickTab(container, 'Mes')
+
+    // los ids se leen del estado guardado: crear otro ejemplo genera ids nuevos
+    const personId = loadState()?.people[0]?.id ?? ''
+    const goalId = GOAL_PERSONAL_ID
+    const input = () =>
+      container.querySelector<HTMLInputElement>('.goalcard .numberfield input')
+    const apply = () =>
+      container.querySelector<HTMLButtonElement>('.goalcard .numberfield__apply')
+    const hint = () => container.querySelector('.goalcard .field__hint')?.textContent ?? ''
+
+    // el ejemplo trae 280 registrados en el mes; la meta de Ana es 300
+    expect(input()?.value).toBe('280.00')
+    expect(hint()).toBe('Meta $300.00')
+
+    // al vaciarlo deja de contar como registro: campo en blanco, con el 0 de
+    // referencia en gris y la meta como pista
+    await act(async () => {
+      typeInto(input() as HTMLInputElement, '0')
+    })
+    expect(apply()?.disabled).toBe(false)
+    await act(async () => {
+      apply()?.click()
+    })
+    expect(savedThisMonth(goalId, personId), 'el 0 no queda registrado').toBeUndefined()
+    expect(input()?.value).toBe('')
+    expect(input()?.placeholder).toBe('0.00')
+    expect(hint()).toBe('Sin registrar · Meta $300.00')
+    expect(apply()?.disabled).toBe(true)
+
+    // y ahora lo que fallaba: escribir justo la meta tiene que poder aplicarse
+    await act(async () => {
+      typeInto(input() as HTMLInputElement, '300')
+    })
+    expect(apply()?.disabled, 'escribir la meta debe activar el botón').toBe(false)
+    await act(async () => {
+      apply()?.click()
+    })
+
+    expect(savedThisMonth(goalId, personId)).toBe(300)
+    expect(input()?.value).toBe('300.00')
+    expect(hint()).toBe('Meta $300.00')
   })
 
   it('guarda lo escrito en una meta aunque el campo se desmonte sin confirmar', async () => {

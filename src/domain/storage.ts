@@ -140,12 +140,17 @@ function coerceSavings(raw: unknown, goalIds: string[]): Record<string, Record<s
     if (!isRecord(value)) continue
     const byGoal: Record<string, number> = {}
     const looksLegacy = 'personal' in value || 'vacation' in value
+    const leer = (goalId: string, stored: unknown): void => {
+      const amount = num(stored, 0)
+      // un 0 es «sin registrar»: no se guarda, así no cuenta como mes con datos
+      if (amount !== 0) byGoal[goalId] = amount
+    }
     if (looksLegacy) {
-      byGoal[GOAL_PERSONAL_ID] = num(value.personal, 0)
-      byGoal[GOAL_VACATION_ID] = num(value.vacation, 0)
+      leer(GOAL_PERSONAL_ID, value.personal)
+      leer(GOAL_VACATION_ID, value.vacation)
     } else {
       for (const goalId of goalIds) {
-        if (goalId in value) byGoal[goalId] = num(value[goalId], 0)
+        if (goalId in value) leer(goalId, value[goalId])
       }
     }
     savings[personId] = byGoal

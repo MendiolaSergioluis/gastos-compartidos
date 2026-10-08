@@ -425,6 +425,28 @@ try {
     alDesmontar && (pintado ?? '').includes('456'),
     `guardado ${alDesmontar} · en pantalla ${pintado}`,
   )
+
+  // ------------------------- registrar exactamente el importe de la meta
+  await go('mes')
+  const pistaMeta = await evaluate(
+    `document.querySelector('.goalcard .field__hint')?.textContent ?? ''`,
+  )
+  const meta = Number(String(pistaMeta).replace(/[^\d.]/g, ''))
+  await escribir(campoMeta, 0, '0')
+  await click(botonMeta, 0)
+  const vacio = await evaluate(`document.querySelector(${JSON.stringify(campoMeta)})?.value`)
+  const marcador = await evaluate(
+    `document.querySelector(${JSON.stringify(campoMeta)})?.placeholder`,
+  )
+  await escribir(campoMeta, 0, String(meta))
+  const activo = await evaluate(`document.querySelector(${JSON.stringify(botonMeta)})?.disabled`)
+  await click(botonMeta, 0)
+  const conLaMeta = (await guardado()).includes(meta)
+  check(
+    'se puede registrar justo el importe de la meta sugerida',
+    vacio === '' && marcador === '0.00' && activo === false && conLaMeta,
+    `vacío "${vacio}" (${marcador}) → meta ${meta} aplicada: ${conLaMeta}`,
+  )
 } catch (error) {
   check('la prueba se completó', false, error.message)
 } finally {

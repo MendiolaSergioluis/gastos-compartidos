@@ -378,10 +378,11 @@ sin tocar el DOM a mano. Verificado con pulsaciones sucesivas:
 
 ### Banco de pruebas de interacción
 
-`scripts/cdp-interact.mjs` comprueba trece comportamientos con clics reales, cada uno **varias veces
-seguidas**: pestañas, interruptores, desplegables, selector de mes, modal (abrir/cerrar/reabrir),
+`scripts/cdp-interact.mjs` comprueba catorce comportamientos con clics reales, cada uno **varias
+veces seguidas**: pestañas, interruptores, desplegables, selector de mes, modal (abrir/cerrar/reabrir),
 liberación del scroll, interruptor y paleta dentro de un `<label>`, Editar/Duplicar, y el botón de
-aplicar de las metas (con y sin desmontaje del campo). Estado actual: **13/13**.
+aplicar de las metas (con desmontaje del campo y registrando justo el importe de la meta). Estado
+actual: **14/14**.
 
 Dos detalles del arnés que costaron falsos positivos y quedaron documentados en el propio script:
 hay que fijar el viewport (Chrome headless arranca estrecho y la media query móvil oculta cosas) y
@@ -431,3 +432,32 @@ Los dos caminos quedaron cubiertos por pruebas: dos escenarios nuevos en el banc
 quita el arreglo** —se comprobó desactivando el `flush` y viendo cómo la prueba se ponía en rojo—,
 así que no es una prueba que pase por casualidad.
 
+### 31. El campo de una meta venía relleno con la propia meta
+
+«Cuando el valor por defecto es igual que el valor a aplicar no se puede aplicar y el botón aparece
+deshabilitado… el valor por defecto dentro del input debería ser cero». El campo mostraba
+`GoalProgress.actual`, que en el dominio es **la meta cuando no hay nada registrado**
+(`stored === undefined ? target : stored`). Como el botón de aplicar se activa comparando lo escrito
+con el valor del campo, **escribir exactamente la meta no era un cambio**: el ✓ quedaba muerto y la
+aportación no se podía registrar nunca. Peor aún: enfocar el campo y cambiar de sección llegaba a
+guardar esa meta como si fuera un depósito real, y el seguimiento la contaba como mes registrado.
+
+**Corregido** separando la previsión del dato real:
+
+- `GoalProgress.deposited` es lo apartado de verdad (0 si no hay registro); `actual` se queda como
+  valor de previsión para «libre tras aporte y metas», que sí supone que se aparta.
+- El campo de **Metas del mes** usa `deposited` y arranca **vacío**, con un `0.00` gris de
+  referencia (`blankWhenZero`) y `Sin registrar · Meta S/ 300.00` debajo. Escribir la meta ahora sí
+  activa el ✓ y la registra.
+- Al entrar en un campo con valor se selecciona el número (`selectOnFocus`): antes, escribir sobre un
+  `300.00` guardado metía dígitos en medio y salía `300280.00`.
+- **Un 0 ya no es un registro**: el reductor borra la clave y la importación descarta los ceros, así
+  que vaciar un mes deja de contarlo en «meses registrados».
+- Dejan de mostrar metas como si fueran dinero real el indicador **Apartado real del mes** y la tabla
+  **Acumulado por mes** (esta última pone «—» donde no hay registro y el distintivo pasa a
+  «Sin registro»).
+
+Comprobado con teclas reales sobre un estado sin nada registrado: campo vacío → teclear `300` (la
+meta) → ✓ activo → guardado `300` → seguimiento con «1 mes(es) registrados», acumulado 300 y
+proyectado 920. Tres pruebas nuevas (105 en total) más un escenario del banco de interacción; la
+prueba del importe exacto **falla si se vuelve a atar el campo a `actual`**, comprobado.

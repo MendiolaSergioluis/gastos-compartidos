@@ -386,7 +386,7 @@ export function MesPage({ state, dispatch, monthId, result }: Props) {
 
       <Card
         title="Metas del mes"
-        subtitle="Un porcentaje del sueldo de cada uno. Las metas se configuran en Ajustes."
+        subtitle="Un porcentaje del sueldo de cada uno: escribe lo que apartaste este mes y pulsa ✓ para registrarlo."
       >
         <div className="goalgrid">
           {people.map((person) => {
@@ -407,12 +407,18 @@ export function MesPage({ state, dispatch, monthId, result }: Props) {
                         <span className="u-muted"> {goal.goal.pct} %</span>
                       </span>
                     }
-                    hint={`Meta ${money(goal.target)}`}
+                    hint={
+                      goal.recorded
+                        ? `Meta ${money(goal.target)}`
+                        : `Sin registrar · Meta ${money(goal.target)}`
+                    }
                   >
                     <MoneyInput
-                      value={goal.actual}
+                      value={goal.deposited}
                       decimals={settings.decimals}
                       symbol={settings.currencySymbol}
+                      blankWhenZero
+                      selectOnFocus
                       withApply
                       applyLabel={`Aplicar el cambio en ${goal.goal.name}`}
                       onChange={(value) =>
@@ -427,11 +433,6 @@ export function MesPage({ state, dispatch, monthId, result }: Props) {
                     />
                   </Field>
                 ))}
-                {!state.months[monthId]?.savings?.[person.id] && (
-                  <p className="u-muted u-small">
-                    Sin registrar: se muestran las metas. Al escribir se guarda el monto real.
-                  </p>
-                )}
               </div>
             )
           })}

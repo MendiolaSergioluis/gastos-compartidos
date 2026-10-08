@@ -73,6 +73,24 @@ describe('reducer', () => {
     expect(state.months['2025-07'].savings[A][GOAL_VACATION_ID]).toBe(250)
   })
 
+  it('un cero deja la meta sin registrar, no registrada en cero', () => {
+    const conValor = reducer(base(), {
+      type: 'month/savings',
+      monthId: '2025-07',
+      personId: A,
+      goalId: GOAL_VACATION_ID,
+      value: 250,
+    })
+    const borrado = reducer(conValor, {
+      type: 'month/savings',
+      monthId: '2025-07',
+      personId: A,
+      goalId: GOAL_VACATION_ID,
+      value: 0,
+    })
+    expect(borrado.months['2025-07'].savings[A][GOAL_VACATION_ID]).toBeUndefined()
+  })
+
   it('hereda los sueldos del mes guardado más reciente', () => {
     const withMonth = reducer(base(), { type: 'month/salary', monthId: '2025-05', personId: A, value: 3500 })
     const next = reducer(withMonth, { type: 'month/ensure', monthId: '2025-06' })

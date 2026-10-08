@@ -186,9 +186,10 @@ describe('metas de ahorro personalizables', () => {
     expect(luis.goalsTarget).toBe(400)
   })
 
-  it('usa la meta como valor real mientras no se registre nada', () => {
+  it('la previsión usa la meta mientras no se registre, pero lo apartado es cero', () => {
     expect(result.hasRecordedSavings).toBe(false)
     expect(result.people[0].goals[0].actual).toBe(300)
+    expect(result.people[0].goals[0].deposited).toBe(0)
     expect(result.people[0].goals[0].recorded).toBe(false)
   })
 
@@ -201,9 +202,12 @@ describe('metas de ahorro personalizables', () => {
     )
     expect(withSavings.hasRecordedSavings).toBe(true)
     expect(withSavings.people[0].goals[0].actual).toBe(250)
+    expect(withSavings.people[0].goals[0].deposited).toBe(250)
     expect(withSavings.people[0].goals[0].target).toBe(300)
-    // la meta sin registrar sigue mostrando su meta
+    // la meta sin registrar sigue mostrando su meta en la previsión, pero no
+    // cuenta como dinero apartado
     expect(withSavings.people[1].goals[1].actual).toBe(200)
+    expect(withSavings.people[1].goals[1].deposited).toBe(0)
   })
 
   it('acepta metas propias como aporte a los padres o caridad', () => {
@@ -229,6 +233,9 @@ describe('metas de ahorro personalizables', () => {
   it('el total de metas agrega a todas las personas', () => {
     expect(result.savings.totalGoal).toBe(1000)
     expect(result.savings.totalActual).toBe(1000)
+    // sin nada registrado, «apartado real» es cero aunque la previsión sume 1000
+    expect(result.savings.totalDeposited).toBe(0)
+    expect(result.savings.byGoal.every((entry) => entry.deposited === 0)).toBe(true)
   })
 })
 

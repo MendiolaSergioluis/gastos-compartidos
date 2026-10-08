@@ -60,8 +60,8 @@ export function MetasPage({ state, monthId, result }: Props) {
         />
         <Stat
           label="Apartado real del mes"
-          value={money(result.savings.totalActual)}
-          hint={result.hasRecordedSavings ? 'Registrado' : 'Mostrando la meta'}
+          value={money(result.savings.totalDeposited)}
+          hint={result.hasRecordedSavings ? 'Registrado' : 'Sin registrar todavía'}
           tone="good"
         />
         <Stat
@@ -180,18 +180,24 @@ export function MetasPage({ state, monthId, result }: Props) {
                           key={goal.id}
                           data-label={goal.name}
                         >
-                          {money(entry?.actual ?? 0)}
+                          {entry?.recorded ? (
+                            money(entry.deposited)
+                          ) : (
+                            <span className="u-muted" title="Sin registro este mes">
+                              —
+                            </span>
+                          )}
                         </td>
                       )
                     })}
                     <td className="table__cell table__cell--num" data-label="Total">
-                      <strong>{money(row.result.savings.totalActual)}</strong>
+                      <strong>{money(row.result.savings.totalDeposited)}</strong>
                     </td>
                     <td className="table__cell" data-label="Registro">
                       {row.result.hasRecordedSavings ? (
                         <Badge tone="good">Real</Badge>
                       ) : (
-                        <Badge>Meta</Badge>
+                        <Badge>Sin registro</Badge>
                       )}
                     </td>
                   </tr>
