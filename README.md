@@ -77,7 +77,9 @@ otra vez.
 - **Mes** es donde se trabaja: sueldos, montos, facturas pagadas y el aporte de cada persona al
   fondo.
 - Los campos numéricos **se confirman al salir del campo** o con Enter, así el panel no recalcula
-  mientras escribes.
+  mientras escribes. En **Metas del mes** cada meta lleva además un botón **✓** a su derecha para
+  aplicar el cambio sin salir del campo: se enciende en cuanto escribes algo distinto. Si cambias de
+  sección con algo a medio escribir, **se guarda igual**.
 - Todo lo que borras se puede **deshacer** desde el aviso de abajo.
 - Cada sección tiene su propia dirección (`#resumen`, `#mes`, `#gastos`, `#metas`, `#historial`,
   `#ajustes`), y los botones atrás/adelante del navegador funcionan.

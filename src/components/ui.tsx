@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type ButtonHTMLAttributes,
   type CSSProperties,
@@ -178,6 +179,8 @@ export function NumberInput({
   prefix,
   className = '',
   onBlur,
+  withApply = false,
+  applyLabel = 'Aplicar el cambio',
   ...rest
 }: {
   value: number
@@ -187,16 +190,67 @@ export function NumberInput({
   prefix?: string
   className?: string
   onBlur?: FocusEventHandler<HTMLInputElement>
+  /** muestra un botón para aplicar lo escrito sin salir del campo */
+  withApply?: boolean
+  applyLabel?: string
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'onBlur' | 'prefix'>) {
   const [draft, setDraft] = useState<string | null>(null)
   const dirty = draft !== null && parseNumber(draft, decimals) !== value
 
+  /**
+   * Lo escrito no puede perderse al salir del campo por otra vía.
+   *
+   * Salir con Tab, con Enter o pulsando fuera ya lo guardaba, pero cambiar de
+   * sección con atrás/adelante del navegador —o editar el hash— desmontaba el
+   * campo y el texto pendiente se descartaba en silencio. Se guarda al
+   * desmontar y también cuando la pestaña pasa a segundo plano.
+   */
+  const latest = useRef<{
+    draft: string | null
+    value: number
+    decimals: number
+    onChange: (value: number) => void
+  }>({ draft, value, decimals, onChange })
+
+  /**
+   * El borrador se copia al ref dentro del manejador del evento y no durante el
+   * render: escribir un ref en render incumple las reglas de React y, con
+   * renderizado concurrente, un render descartado dejaría el ref con datos que
+   * nunca llegaron a pintarse. El resto de campos se sincroniza al confirmar.
+   */
+  const edit = (next: string | null) => {
+    latest.current = { ...latest.current, draft: next }
+    setDraft(next)
+  }
+
+  useEffect(() => {
+    latest.current = { ...latest.current, value, decimals, onChange }
+  })
+
   const commit = () => {
     if (draft === null) return
     const parsed = parseNumber(draft, decimals)
-    setDraft(null)
+    edit(null)
     if (parsed !== value) onChange(parsed)
   }
+
+  useEffect(() => {
+    const flush = () => {
+      const current = latest.current
+      if (current.draft === null) return
+      const parsed = parseNumber(current.draft, current.decimals)
+      if (parsed !== current.value) current.onChange(parsed)
+    }
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flush()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility)
+      flush()
+    }
+  }, [])
 
   return (
     <span className={`numberfield ${dirty ? 'numberfield--dirty' : ''} ${className}`}>
@@ -206,15 +260,15 @@ export function NumberInput({
         type="text"
         inputMode="decimal"
         value={draft ?? plainNumber(value, decimals)}
-        onFocus={() => setDraft(plainNumber(value, decimals))}
-        onChange={(event) => setDraft(event.target.value)}
+        onFocus={() => edit(plainNumber(value, decimals))}
+        onChange={(event) => edit(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
             commit()
             event.currentTarget.blur()
           }
           if (event.key === 'Escape') {
-            setDraft(null)
+            edit(null)
             event.currentTarget.blur()
           }
         }}
@@ -225,6 +279,18 @@ export function NumberInput({
         {...rest}
       />
       {suffix && <span className="numberfield__suffix">{suffix}</span>}
+      {withApply && (
+        <button
+          type="button"
+          className={`numberfield__apply ${dirty ? 'numberfield__apply--pending' : ''}`}
+          disabled={!dirty}
+          aria-label={applyLabel}
+          title={dirty ? applyLabel : 'Sin cambios pendientes'}
+          onClick={commit}
+        >
+          ✓
+        </button>
+      )}
     </span>
   )
 }
@@ -235,6 +301,8 @@ export function MoneyInput({
   decimals,
   symbol = '',
   suffix,
+  withApply,
+  applyLabel,
   ...rest
 }: {
   value: number
@@ -242,6 +310,8 @@ export function MoneyInput({
   decimals: number
   symbol?: string
   suffix?: string
+  withApply?: boolean
+  applyLabel?: string
 } & Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'prefix'>) {
   return (
     <NumberInput
@@ -250,6 +320,8 @@ export function MoneyInput({
       decimals={decimals}
       prefix={symbol || undefined}
       suffix={suffix}
+      withApply={withApply}
+      applyLabel={applyLabel}
       {...rest}
     />
   )

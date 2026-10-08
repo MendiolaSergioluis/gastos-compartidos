@@ -145,6 +145,38 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? '✓' : '✗'} ${name}${detail ? ` — ${detail}` : ''}`)
 }
 
+/**
+ * Escribe con teclas reales dentro de un campo, reemplazando lo que hubiera.
+ *
+ * Los eventos se envían de una en una porque `Input.insertText` no dispara el
+ * `onChange` de React: el valor pintado cambiaría pero el estado no. Para
+ * reemplazar el contenido se va al final con `End` y se borra hacia atrás, ya
+ * que un clic deja el cursor donde caiga el dedo.
+ */
+async function escribir(selector, index, texto) {
+  const point = await evaluate(`(() => {
+    const el = document.querySelectorAll(${JSON.stringify(selector)})[${index}];
+    if (!el) return null;
+    el.scrollIntoView({ block: 'center', behavior: 'instant' });
+    const r = el.getBoundingClientRect();
+    return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + r.height / 2) };
+  })()`)
+  if (!point) throw new Error(`no encontré ${selector}[${index}]`)
+  await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: point.x, y: point.y, button: 'left', clickCount: 1 })
+  await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: point.x, y: point.y, button: 'left', clickCount: 1 })
+  const tecla = async (key, code, vk) => {
+    await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key, code, windowsVirtualKeyCode: vk })
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key, code, windowsVirtualKeyCode: vk })
+  }
+  await tecla('End', 'End', 35)
+  for (let i = 0; i < 16; i += 1) await tecla('Backspace', 'Backspace', 8)
+  for (const char of texto) {
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: char, text: char, unmodifiedText: char })
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: char })
+  }
+  await sleep(240)
+}
+
 const go = async (hash) => {
   await send('Page.navigate', { url: `${base}#${hash}` })
   await sleep(1400)
@@ -357,6 +389,41 @@ try {
     'la paleta de color responde al color pulsado',
     c1 === 3 && c2 === 5 && c3 === 1,
     `elegidos ${c1},${c2},${c3}`,
+  )
+
+  // ------------------------------------------- aplicar una meta sin salir del campo
+  await go('mes')
+  const guardado = () =>
+    evaluate(`(() => {
+      const state = JSON.parse(localStorage.getItem('gastos-compartidos.state.v1'));
+      const mes = localStorage.getItem('gastos-pareja.month') || Object.keys(state.months).sort().pop();
+      const porPersona = state.months[mes].savings;
+      return Object.values(porPersona).flatMap((metas) => Object.values(metas));
+    })()`)
+  const campoMeta = '.goalcard .numberfield input'
+  const botonMeta = '.goalcard .numberfield__apply'
+  const sinCambios = await evaluate(`document.querySelector(${JSON.stringify(botonMeta)})?.disabled`)
+  await escribir(campoMeta, 0, '123')
+  const trasEscribir = await evaluate(`document.querySelector(${JSON.stringify(botonMeta)})?.disabled`)
+  await click(botonMeta, 0)
+  const conBoton = (await guardado()).includes(123)
+  const botonTrasAplicar = await evaluate(`document.querySelector(${JSON.stringify(botonMeta)})?.disabled`)
+  check(
+    'el botón de aplicar una meta guarda el valor escrito',
+    sinCambios === true && trasEscribir === false && conBoton && botonTrasAplicar === true,
+    `inactivo → activo → guardado ${conBoton} → inactivo ${botonTrasAplicar}`,
+  )
+
+  // escribir y salir de la sección sin confirmar: el cambio no puede perderse
+  await escribir(campoMeta, 0, '456')
+  await go('gastos')
+  const alDesmontar = (await guardado()).includes(456)
+  await go('mes')
+  const pintado = await evaluate(`document.querySelector(${JSON.stringify(campoMeta)})?.value`)
+  check(
+    'lo escrito en una meta se guarda aunque el campo se desmonte',
+    alDesmontar && (pintado ?? '').includes('456'),
+    `guardado ${alDesmontar} · en pantalla ${pintado}`,
   )
 } catch (error) {
   check('la prueba se completó', false, error.message)

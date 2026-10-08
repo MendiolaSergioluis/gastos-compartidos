@@ -2848,6 +2848,13 @@ textarea {
 }
 
 @media (max-width: 520px) {
+  /* el botón de aplicar es la acción principal del campo: en táctil conviene
+     un objetivo algo mayor que los 36 px de escritorio */
+  .numberfield__apply {
+    width: 40px;
+    height: 40px;
+  }
+
   /* dos columnas: una sola alargaba demasiado el scroll antes del contenido */
   .grid--4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3066,4 +3073,41 @@ textarea {
     gap: var(--space-3);
     text-align: left;
   }
+}
+
+/* botón para aplicar lo escrito sin salir del campo */
+.numberfield__apply {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface-2);
+  color: var(--color-text-faint);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease),
+    border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
+}
+
+.numberfield__apply:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.numberfield__apply--pending {
+  background: var(--color-accent-strong);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: var(--glow);
+}
+
+.numberfield__apply--pending:hover {
+  transform: translateY(-1px);
+}
+
+.numberfield__apply:active:not(:disabled) {
+  transform: scale(0.93);
 }

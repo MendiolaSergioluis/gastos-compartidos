@@ -4,7 +4,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { createDemoState } from './domain/defaults'
-import { STORAGE_KEY } from './domain/storage'
+import { STORAGE_KEY, loadState } from './domain/storage'
 import { StoreProvider } from './state/StoreContext'
 import { ToastProvider } from './state/ToastProvider'
 
@@ -341,5 +341,57 @@ describe('app de gastos compartidos', () => {
     // el valor debe ser absoluto: un url() relativo dentro de una variable CSS se
     // resolvería contra /assets/ y daría 404 en el build de producción
     expect(mask).toContain(new URL('icons/', document.baseURI).href)
+  })
+
+  /** Todos los apartados guardados, para comprobar que un cambio llegó al estado. */
+  function savedSavings(): number[] {
+    const saved = loadState()
+    return Object.values(saved?.months ?? {}).flatMap((month) =>
+      Object.values(month.savings).flatMap((byGoal) => Object.values(byGoal)),
+    )
+  }
+
+  it('actualiza una meta con el botón de aplicar sin salir del campo', async () => {
+    await clickTab(container, 'Mes')
+
+    const apply = () =>
+      container.querySelector<HTMLButtonElement>('.goalcard .numberfield__apply')
+    const input = container.querySelector<HTMLInputElement>('.goalcard .numberfield input')
+    expect(input).toBeTruthy()
+    expect(apply(), 'falta el botón de aplicar en las metas del mes').toBeTruthy()
+    // sin cambios escritos no hay nada que aplicar
+    expect(apply()?.disabled).toBe(true)
+
+    await act(async () => {
+      typeInto(input as HTMLInputElement, '999')
+    })
+    expect(apply()?.disabled, 'el botón debería activarse al escribir').toBe(false)
+
+    await act(async () => {
+      apply()?.click()
+    })
+
+    expect(savedSavings()).toContain(999)
+    // el campo sigue montado, ya con el valor confirmado y el botón de nuevo inactivo
+    expect(
+      container.querySelector<HTMLInputElement>('.goalcard .numberfield input')?.value,
+    ).toContain('999')
+    expect(apply()?.disabled).toBe(true)
+  })
+
+  it('guarda lo escrito en una meta aunque el campo se desmonte sin confirmar', async () => {
+    await clickTab(container, 'Mes')
+
+    const input = container.querySelector<HTMLInputElement>('.goalcard .numberfield input')
+    expect(input).toBeTruthy()
+    expect(savedSavings()).not.toContain(777)
+
+    // se escribe y se cambia de sección: antes el texto pendiente se perdía
+    await act(async () => {
+      typeInto(input as HTMLInputElement, '777')
+    })
+    await clickTab(container, 'Gastos')
+
+    expect(savedSavings()).toContain(777)
   })
 })

@@ -121,7 +121,7 @@ mal.**
 | `modal`, `toast`, `warnings`, `advice`, `empty`, `demobanner` | capas y mensajes |
 | `person`, `legend`, `pot`, `contribution`, `personrow` | personas, fondo común y grupo |
 | `category`, `expense`, `monthrow` | gastos del catálogo y del mes |
-| `goalist`, `goalcard`, `goalgrid` | metas |
+| `goalist`, `goalcard`, `goalgrid` | metas, con `numberfield__apply` para confirmar sin salir del campo |
 | `table`, `summary`, `formula` | datos tabulados y fórmulas |
 | `donut`, `splitbar`, `bars`, `progress` | gráficos |
 

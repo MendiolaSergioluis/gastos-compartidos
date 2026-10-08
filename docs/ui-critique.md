@@ -378,10 +378,10 @@ sin tocar el DOM a mano. Verificado con pulsaciones sucesivas:
 
 ### Banco de pruebas de interacción
 
-`scripts/cdp-interact.mjs` comprueba nueve comportamientos con clics reales, cada uno **varias veces
+`scripts/cdp-interact.mjs` comprueba trece comportamientos con clics reales, cada uno **varias veces
 seguidas**: pestañas, interruptores, desplegables, selector de mes, modal (abrir/cerrar/reabrir),
-liberación del scroll, interruptor y paleta dentro de un `<label>`, y Editar/Duplicar. Estado actual:
-**9/9**.
+liberación del scroll, interruptor y paleta dentro de un `<label>`, Editar/Duplicar, y el botón de
+aplicar de las metas (con y sin desmontaje del campo). Estado actual: **13/13**.
 
 Dos detalles del arnés que costaron falsos positivos y quedaron documentados en el propio script:
 hay que fijar el viewport (Chrome headless arranca estrecho y la media query móvil oculta cosas) y
@@ -402,3 +402,32 @@ Este caso no lo cubría ninguna prueba: el banco de interacción probaba despleg
 nunca **dentro de un modal**. Ahora hay dos escenarios (Categoría y Tipo) y, sobre todo, **cada clic
 del banco comprueba con `document.elementFromPoint` que el elemento esté realmente encima**: si algo
 lo tapa, la prueba falla diciendo qué lo tapa. Esa comprobación habría cazado el fallo sola.
+
+### 30. Un importe escrito en una meta se perdía al cambiar de sección
+
+«Al cambiar el contenido no aparece reflejado el cambio en las metas». El campo numérico confirma al
+salir de él —con Tab, con Enter o pulsando fuera—, pero **no al desmontarse**. Cambiar de sección con
+atrás/adelante del navegador, editar el hash o cerrar la pestaña desmontaba el campo y el texto
+pendiente se descartaba en silencio: el número seguía en pantalla un instante y luego desaparecía sin
+aviso.
+
+Medido con teclas reales antes de tocar nada: Tab, Enter, clic fuera y cambio de pestaña sí
+guardaban; el hash y la navegación completa, no.
+
+**Corregido** en dos frentes:
+
+- **Un botón de aplicar (✓) a la derecha de cada meta**, que aparece atenuado e inactivo mientras no
+  haya cambios y se enciende en color de acento en cuanto se escribe algo distinto. Permite confirmar
+  sin salir del campo, que es lo que se pedía. En móvil mide 40 px para que sea cómodo con el dedo;
+  lleva `aria-label` con el nombre de la meta («Aplicar el cambio en Ahorro personal»).
+- **Confirmación al desmontar**: el campo guarda lo pendiente en el `cleanup` de un efecto y también
+  cuando la pestaña pasa a segundo plano (`visibilitychange`), que es el caso de cambiar de app en el
+  móvil. El borrador se copia a un `ref` **dentro del manejador del evento**, nunca durante el
+  render: escribir un `ref` en render incumple las reglas de React y con renderizado concurrente un
+  render descartado dejaría datos que nunca se pintaron.
+
+Los dos caminos quedaron cubiertos por pruebas: dos escenarios nuevos en el banco de interacción
+(13/13) y dos pruebas de humo (`ui.smoke.test.tsx`, 103 en total). La del desmontaje **falla si se
+quita el arreglo** —se comprobó desactivando el `flush` y viendo cómo la prueba se ponía en rojo—,
+así que no es una prueba que pase por casualidad.
+

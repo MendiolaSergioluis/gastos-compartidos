@@ -413,6 +413,8 @@ export function MesPage({ state, dispatch, monthId, result }: Props) {
                       value={goal.actual}
                       decimals={settings.decimals}
                       symbol={settings.currencySymbol}
+                      withApply
+                      applyLabel={`Aplicar el cambio en ${goal.goal.name}`}
                       onChange={(value) =>
                         dispatch({
                           type: 'month/savings',
