@@ -127,6 +127,10 @@ resolver transferencias con montos desiguales y convierte un presupuesto en un r
 - **Acumulado** — la suma real, mes a mes.
 - **Proyectado** — lo acumulado más lo que queda por guardar hasta diciembre.
 
+Debajo, **Acumulado por mes** abre un cuadro por persona con sus metas personales y otro con las
+metas conjuntas (aportadas entre todo el grupo), para que se vea de quién es cada monto. Donde un mes
+no tiene registro aparece «—», y los importes reales se editan en la pestaña Mes.
+
 **Modos de reparto por gasto.** *Proporcional* (por defecto, el mismo % para todos), *Partes
 iguales* (sin mirar el sueldo) y *Montos fijos*. Si algún gasto no es proporcional, la app avisa de
 que el % efectivo deja de ser igual para todos.

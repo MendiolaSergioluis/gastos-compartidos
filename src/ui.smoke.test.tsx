@@ -433,6 +433,34 @@ describe('app de gastos compartidos', () => {
     expect(hint()).toBe('Meta $300.00')
   })
 
+  it('el acumulado por mes va en un cuadro por persona', async () => {
+    await clickTab(container, 'Metas')
+
+    const tablas = [...container.querySelectorAll<HTMLTableElement>('table.table')].map(
+      (tabla) => ({
+        titulo: tabla.querySelector('caption')?.textContent ?? '',
+        texto: tabla.textContent ?? '',
+      }),
+    )
+    expect(tablas.map((tabla) => tabla.titulo)).toEqual([
+      'Ahorro registrado por mes · Ana',
+      'Ahorro registrado por mes · Luis',
+      'Ahorro registrado por mes · Vacaciones conjuntas',
+    ])
+
+    // el ejemplo de octubre: Ana 280 personal y 250 de vacaciones, Luis 190 y 170
+    const ana = tablas[0]?.texto ?? ''
+    const luis = tablas[1]?.texto ?? ''
+    const conjunta = tablas[2]?.texto ?? ''
+    // cada cuadro trae lo suyo y no lo del otro: antes iban sumados en una columna
+    expect(ana).toContain('$280.00')
+    expect(ana).not.toContain('$190.00')
+    expect(luis).toContain('$190.00')
+    expect(luis).not.toContain('$280.00')
+    expect(conjunta).toContain('$420.00')
+    expect(conjunta).not.toContain('$280.00')
+  })
+
   it('guarda lo escrito en una meta aunque el campo se desmonte sin confirmar', async () => {
     await clickTab(container, 'Mes')
 

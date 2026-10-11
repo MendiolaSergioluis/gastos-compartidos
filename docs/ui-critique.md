@@ -461,3 +461,19 @@ Comprobado con teclas reales sobre un estado sin nada registrado: campo vacío �
 meta) → ✓ activo → guardado `300` → seguimiento con «1 mes(es) registrados», acumulado 300 y
 proyectado 920. Tres pruebas nuevas (105 en total) más un escenario del banco de interacción; la
 prueba del importe exacto **falla si se vuelve a atar el campo a `actual`**, comprobado.
+
+### 32. «Acumulado por mes» no decía de quién era cada monto
+
+La tabla tenía una sola columna **Ahorro personal** con la suma de todas las personas (470 = 280 de
+Ana + 190 de Luis), así que no había forma de saber a quién correspondían los datos, y el distintivo
+«Real» de la fila no aclaraba nada.
+
+**Corregido:** la sección pasa a un **cuadro por persona** —con sus metas personales, su total del
+mes y su acumulado del año en el encabezado— más un cuadro aparte para las **metas conjuntas**, que
+son del grupo y llevan su columna «Total del grupo». Así los cuadros suman: persona + persona +
+conjuntas = total del mes, y cada fila sigue marcando «Real» o «Sin registro» con «—» en las celdas
+vacías. En móvil cada mes se apila en un bloque con sus etiquetas, como el resto de tablas.
+
+Prueba de humo nueva (106 en total) que comprueba que hay tres cuadros, que el de Ana trae el 280 y
+**no** el 190, el de Luis lo contrario, y el conjunto el 420 (250 + 170).
+

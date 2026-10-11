@@ -1,5 +1,13 @@
 import { type CSSProperties, type Dispatch } from 'react'
-import { Badge, Card, EmptyState, ExpenseIcon, Progress, Stat } from '../components/ui'
+import {
+  Badge,
+  Card,
+  EmptyState,
+  ExpenseIcon,
+  Progress,
+  SectionTitle,
+  Stat,
+} from '../components/ui'
 import {
   buildGoalRows,
   computeMonth,
@@ -9,7 +17,7 @@ import {
 } from '../domain/finance'
 import { formatMoney, formatPct } from '../domain/money'
 import type { Action } from '../state/reducer'
-import type { AppState } from '../domain/types'
+import type { AppState, Goal } from '../domain/types'
 
 interface Props {
   state: AppState
@@ -34,6 +42,87 @@ export function MetasPage({ state, monthId, result }: Props) {
     label: monthLabel(id, settings),
     result: computeMonth(state, id),
   }))
+
+  const personales = goals.filter((goal) => goal.scope === 'personal')
+  const conjuntas = goals.filter((goal) => goal.scope === 'joint')
+
+  /** Una celda por meta y mes: el monto apartado, o null si ese mes no se registró. */
+  type Celda = { goal: Goal; value: number | null }
+
+  /**
+   * Cuadros de «Acumulado por mes»: uno por persona con sus metas personales y
+   * otro con las conjuntas. Antes había una sola columna «Ahorro personal» con
+   * la suma de todos, y no se sabía a quién correspondían los montos.
+   */
+  const cuadros: {
+    id: string
+    title: string
+    color?: string | undefined
+    metas: Goal[]
+    /** aportado entre todas las personas (solo en el cuadro conjunto) */
+    grupo?: boolean
+    filas: { id: string; label: string; celdas: Celda[]; total: number; registrado: boolean }[]
+    acumulado: number
+  }[] = [
+    ...state.people
+      .filter(() => personales.length > 0)
+      .map((person) => ({
+        id: person.id,
+        title: person.name,
+        color: person.color,
+        metas: personales,
+        filas: monthRows.map((row) => {
+          const entry = row.result.people.find((item) => item.person.id === person.id)
+          const celdas: Celda[] = personales.map((goal) => {
+            const progress = entry?.goals.find((item) => item.goal.id === goal.id)
+            return { goal, value: progress?.recorded ? progress.deposited : null }
+          })
+          return {
+            id: row.id,
+            label: row.label,
+            celdas,
+            total: celdas.reduce((acc, celda) => acc + (celda.value ?? 0), 0),
+            registrado: celdas.some((celda) => celda.value !== null),
+          }
+        }),
+        acumulado: rows
+          .filter((row) => row.person?.id === person.id && row.goal.scope === 'personal')
+          .reduce((acc, row) => acc + row.accumulated, 0),
+      })),
+    ...(conjuntas.length > 0
+      ? [
+          {
+            id: 'conjuntas',
+            title: conjuntas.length === 1 ? (conjuntas[0]?.name ?? 'Conjuntas') : 'Metas conjuntas',
+            grupo: true,
+            metas: conjuntas,
+            filas: monthRows.map((row) => {
+              const celdas: Celda[] = conjuntas.map((goal) => {
+                const total = row.result.savings.byGoal.find((item) => item.goal.id === goal.id)
+                return { goal, value: total?.recorded ? total.deposited : null }
+              })
+              return {
+                id: row.id,
+                label: row.label,
+                celdas,
+                total: celdas.reduce((acc, celda) => acc + (celda.value ?? 0), 0),
+                registrado: celdas.some((celda) => celda.value !== null),
+              }
+            }),
+            acumulado: rows
+              .filter((row) => row.goal.scope === 'joint')
+              .reduce((acc, row) => acc + row.accumulated, 0),
+          },
+        ]
+      : []),
+  ]
+
+  const resumenCuadro = (cuadro: (typeof cuadros)[number]): string => {
+    const meses = cuadro.filas.filter((fila) => fila.registrado).length
+    return `${money(cuadro.acumulado)} en el año · ${
+      meses === 0 ? 'sin registrar todavía' : `${meses} mes(es) registrados`
+    }`
+  }
 
   if (goals.length === 0) {
     return (
@@ -133,80 +222,98 @@ export function MetasPage({ state, monthId, result }: Props) {
         </div>
       </Card>
 
-      <Card
-        title="Acumulado por mes"
-        subtitle={`${monthsWithData.length} mes(es) guardados · los montos reales se editan en la pestaña Mes`}
-        padded={false}
-      >
-        {monthsWithData.length === 0 ? (
-          <div className="u-pad">
-            <p className="u-muted">
-              Todavía no hay meses guardados. Edita el mes para empezar a registrar.
-            </p>
-          </div>
-        ) : (
-          <div className="table__wrap">
-            <table className="table">
-              <caption className="u-sr-only">Ahorro registrado por meta y mes</caption>
-              <thead className="table__head">
-                <tr>
-                  <th className="table__cell">Mes</th>
-                  {goals.map((goal) => (
-                    <th className="table__cell table__cell--num" key={goal.id}>
-                      {goal.name}
-                    </th>
-                  ))}
-                  <th className="table__cell table__cell--num">Total</th>
-                  <th className="table__cell">Registro</th>
-                </tr>
-              </thead>
-              <tbody>
-                {monthRows.map((row) => (
-                  <tr
-                    key={row.id}
-                    className={`table__row ${row.id === monthId ? 'table__row--current' : ''}`}
-                  >
-                    <td className="table__cell" data-label="Mes">
-                      {row.label}
-                      {row.id === monthId && <Badge tone="accent">Actual</Badge>}
-                    </td>
-                    {goals.map((goal) => {
-                      const entry = row.result.savings.byGoal.find(
-                        (item) => item.goal.id === goal.id,
-                      )
-                      return (
-                        <td
-                          className="table__cell table__cell--num"
-                          key={goal.id}
-                          data-label={goal.name}
-                        >
-                          {entry?.recorded ? (
-                            money(entry.deposited)
+      {monthsWithData.length === 0 ? (
+        <Card title="Acumulado por mes">
+          <p className="u-muted">
+            Todavía no hay meses guardados. Edita el mes para empezar a registrar.
+          </p>
+        </Card>
+      ) : (
+        <>
+          <SectionTitle
+            title="Acumulado por mes"
+            hint={`${monthsWithData.length} mes(es) guardados · un cuadro por persona${
+              conjuntas.length > 0 ? ' y otro para las metas conjuntas' : ''
+            }. Los montos reales se editan en la pestaña Mes.`}
+          />
+
+          {cuadros.map((cuadro) => (
+            <Card
+              key={cuadro.id}
+              title={
+                <span className="field__inline">
+                  {cuadro.color && (
+                    <span className="legend__dot" style={{ background: cuadro.color }} />
+                  )}
+                  {cuadro.title}
+                </span>
+              }
+              subtitle={resumenCuadro(cuadro)}
+              padded={false}
+            >
+              <div className="table__wrap">
+                <table className="table">
+                  <caption className="u-sr-only">
+                    {`Ahorro registrado por mes · ${cuadro.title}`}
+                  </caption>
+                  <thead className="table__head">
+                    <tr>
+                      <th className="table__cell">Mes</th>
+                      {cuadro.metas.map((goal) => (
+                        <th className="table__cell table__cell--num" key={goal.id}>
+                          {goal.name}
+                        </th>
+                      ))}
+                      <th className="table__cell table__cell--num">
+                        {cuadro.grupo ? 'Total del grupo' : 'Total'}
+                      </th>
+                      <th className="table__cell">Registro</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cuadro.filas.map((fila) => (
+                      <tr
+                        key={fila.id}
+                        className={`table__row ${fila.id === monthId ? 'table__row--current' : ''}`}
+                      >
+                        <td className="table__cell" data-label="Mes">
+                          {fila.label}
+                          {fila.id === monthId && <Badge tone="accent">Actual</Badge>}
+                        </td>
+                        {fila.celdas.map((celda) => (
+                          <td
+                            className="table__cell table__cell--num"
+                            key={celda.goal.id}
+                            data-label={celda.goal.name}
+                          >
+                            {celda.value === null ? (
+                              <span className="u-muted" title="Sin registro este mes">
+                                —
+                              </span>
+                            ) : (
+                              money(celda.value)
+                            )}
+                          </td>
+                        ))}
+                        <td className="table__cell table__cell--num" data-label="Total">
+                          <strong>{money(fila.total)}</strong>
+                        </td>
+                        <td className="table__cell" data-label="Registro">
+                          {fila.registrado ? (
+                            <Badge tone="good">Real</Badge>
                           ) : (
-                            <span className="u-muted" title="Sin registro este mes">
-                              —
-                            </span>
+                            <Badge>Sin registro</Badge>
                           )}
                         </td>
-                      )
-                    })}
-                    <td className="table__cell table__cell--num" data-label="Total">
-                      <strong>{money(row.result.savings.totalDeposited)}</strong>
-                    </td>
-                    <td className="table__cell" data-label="Registro">
-                      {row.result.hasRecordedSavings ? (
-                        <Badge tone="good">Real</Badge>
-                      ) : (
-                        <Badge>Sin registro</Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          ))}
+        </>
+      )}
     </div>
   )
 }
